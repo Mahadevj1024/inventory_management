@@ -13,21 +13,6 @@ from django.contrib.auth import authenticate
 logger = logging.getLogger(__name__)
 
 
-class LoginView(APIView):
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        
-        # Authenticate the user
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            # Create a new token for the user
-            token = AccessToken.for_user(user)
-            return Response({'access': str(token)}, status=status.HTTP_200_OK)
-        else:
-            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
 
 class ItemCreate(APIView):
     permission_classes = [IsAuthenticated]
@@ -59,7 +44,7 @@ class ItemDetail(APIView):
                 logger.info(f"Item {item_id} fetched from DB")
             except Item.DoesNotExist:
                 logger.error(f"Item {item_id} not found")
-                return Response(status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": f"Item {item_id} not found"},status=status.HTTP_404_NOT_FOUND)
         
         serializer = ItemSerializer(item)
         return Response(serializer.data)
@@ -68,7 +53,7 @@ class ItemDetail(APIView):
         try:
             item = Item.objects.get(id=item_id)
         except Item.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"Item {item_id} not found"},status=status.HTTP_404_NOT_FOUND)
 
         serializer = ItemSerializer(item, data=request.data)
         if serializer.is_valid():
@@ -88,5 +73,5 @@ class ItemDetail(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Item.DoesNotExist:
             logger.error(f"Item {item_id} not found")
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": f"Item {item_id} not found"},status=status.HTTP_404_NOT_FOUND)
 
